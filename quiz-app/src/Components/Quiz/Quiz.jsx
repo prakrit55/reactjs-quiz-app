@@ -23,7 +23,10 @@ const Quiz = () => {
       if (startQuiz) {
         try {
           // const apiUrl = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:3000/api/questions';
-          const apiUrl = "http://quizapp.cloudcorehub.com/api/questions"
+          const serviceHost = process.env.SERVICE_HOST;
+          const servicePort = process.env.SERVICE_PORT;
+          const servicePath = process.env.API_PATH;
+          const apiUrl = `http://${serviceHost}:${servicePort}${servicePath}`;
           const response = await fetch(apiUrl);
           if (!response.ok) throw new Error("Failed to fetch");
           let questions = await response.json();
