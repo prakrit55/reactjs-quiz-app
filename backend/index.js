@@ -1,6 +1,32 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors"); // For handling cross-origin requests
+
+const client = require("prom-client")
+const register = new client.Registry();
+
+// const collectDefaultMetrics = client.collectDefaultMetrics;
+// // Probe every 5th second.
+// collectDefaultMetrics({register});
+
+const newCounter = new client.Counter({
+  name: "requests_per_second",
+  help: "total no. rpc",
+  labelNames: ["requests_per_second"],
+});
+
+register.registerMetric(newCounter)
+
+const histo = new client.Histogram ({
+  name: 'histogaram_for_rpc',
+  help: 'histogram, to score rpc',
+  labelNames: ["histogaram_for_rpc"],
+  buckets: [1, 2, 3, 6, 9, 11],
+})
+
+register.registerMetric(histo)
+
+
 // const helmet = require('helmet'); // Import helmet
 // const csrf = require('csurf'); // Import csurf
 // const cookieParser = require('cookie-parser'); // Import cookie-parser for CSRF token handling
@@ -44,14 +70,23 @@ const Question = mongoose.model("Question", questionSchema);
 // GET all questions
 app.get("/api/questions", async (req, res) => {
   try {
+    var start = new Date()
     const questions = await Question.find();
+    newCounter.labels({requests_per_second: res.statusCode}).inc();
     console.log(questions);
     res.json(questions);
+    histo.labels({histogaram_for_rpc: res.statusCode}).observe(2)
   } catch (err) {
     console.error("Error fetching questions:", err.message);
     res.status(500).json({ message: err.message });
   }
 });
+
+
+app.get('/metrics', (req, res) => {
+  res.setHeader('Content-Type', register.contentType)
+  register.metrics().then(data => res.status(200).send(data))
+})
 
 // POST a new question
 // // Modified route to include csrfProtection as middleware
@@ -73,7 +108,6 @@ app.post("/api/questions", async (req, res) => {
 });
 
 // Additional routes for updating and deleting questions can be added here
-
 // Start the server
 app.listen(port, "0.0.0.0", () => {
   console.log(`Quiz API listening at http://0.0.0.0:${port}`);

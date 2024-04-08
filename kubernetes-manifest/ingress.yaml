@@ -10,20 +10,19 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: quizapp.cloudcorehub.com
-      http:
+    - http:
         paths:
           - path: /api/questions
             pathType: Prefix
             backend:
               service:
                 name: backend-service
-                port:   
+                port:
                   number: 3000
           - path: /
             pathType: Prefix
             backend:
               service:
                 name: frontend-service
-                port: 
+                port:
                   number: 8080

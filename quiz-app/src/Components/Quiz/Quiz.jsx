@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import "./Quiz.css";
 
+// import { http_request_counter } from "../../../server";
+
 const Quiz = () => {
   let [index, setIndex] = useState(0);
   let [question, setQuestion] = useState({});
@@ -23,10 +25,7 @@ const Quiz = () => {
       if (startQuiz) {
         try {
           // const apiUrl = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:3000/api/questions';
-          const serviceHost = process.env.SERVICE_HOST;
-          const servicePort = process.env.SERVICE_PORT;
-          const servicePath = process.env.API_PATH;
-          const apiUrl = `http://${serviceHost}:${servicePort}${servicePath}`;
+          const apiUrl = "http://localhost:3000/api/questions";
           const response = await fetch(apiUrl);
           if (!response.ok) throw new Error("Failed to fetch");
           let questions = await response.json();
@@ -67,6 +66,7 @@ const Quiz = () => {
   const checkAns = (e, ans) => {
     if (lock === false) {
       if (question && question.answer === ans) {
+        // http_request_counter.labels({statusCode: ans}).inc();
         e.target.classList.add("correct");
         setLock(true);
         setScore((prev) => prev + 1);
