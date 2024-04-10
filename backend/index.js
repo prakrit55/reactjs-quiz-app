@@ -12,7 +12,7 @@ const register = new client.Registry();
 const newCounter = new client.Counter({
   name: "requests_per_second",
   help: "total no. rpc",
-  labelNames: ["requests_per_second"],
+  labelNames: ["requests_times_get", "requests_times_error"],
 });
 
 register.registerMetric(newCounter)
@@ -20,8 +20,8 @@ register.registerMetric(newCounter)
 const histo = new client.Histogram ({
   name: 'histogaram_for_rpc',
   help: 'histogram, to score rpc',
-  labelNames: ["histogaram_for_rpc"],
-  buckets: [1, 2, 3, 6, 9, 11],
+  labelNames: ["histogaram_for_get_requests", "histogaram_for_post_questions"],
+  buckets: [1, 2, 3, 4, 5, 6, 9, 11],
 })
 
 register.registerMetric(histo)
@@ -44,6 +44,15 @@ app.use(express.json()); // For parsing application/json
 // // CSRF protection
 // const csrfProtection = csrf({ cookie: true });
 // app.use(csrfProtection);
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+async function sleep(seconds) {
+  return new Promise(resolve => setTimeout(resolve, seconds));
+}
+// Function to sleep for a specified amount of time in millisecond
 
 // MongoDB connection string
 const dbUri = process.env.MONGO_URI;
@@ -70,15 +79,58 @@ const Question = mongoose.model("Question", questionSchema);
 // GET all questions
 app.get("/api/questions", async (req, res) => {
   try {
-    var start = new Date()
+
+    const start = new Date().getSeconds(); // Minimum sleep time (in milliseconds)
+    const min = 1000;
+    const max = 9000; // Maximum sleep time (in milliseconds)
+    const randomSleepTime = await getRandomInt(min, max);
+
+
     const questions = await Question.find();
-    newCounter.labels({requests_per_second: res.statusCode}).inc();
-    console.log(questions);
     res.json(questions);
-    histo.labels({histogaram_for_rpc: res.statusCode}).observe(2)
+    newCounter.labels({requests_times_get: res.statusCode}).inc();
+    await sleep(randomSleepTime)
+
+    const endTime = new Date().getSeconds();
+    
+    // console.log(questions);
+
+    console.log(endTime-start, randomSleepTime, endTime, start)
+
+
+    histo.labels({histogaram_for_get_requests: res.statusCode}).observe(endTime-start)
   } catch (err) {
     console.error("Error fetching questions:", err.message);
+    newCounter.labels({requests_times_error: res.statusCode}).inc();
     res.status(500).json({ message: err.message });
+  }
+});
+// POST a new question
+// // Modified route to include csrfProtection as middleware
+// app.post("/api/questions", csrfProtection, async (req, res) => { // Protect this route with CSRF - Line modified
+
+
+app.post("/api/questions", async (req, res) => {
+  const start = new Date().getSeconds();
+  // const min = 5000;
+  // const max = 9000; // Maximum sleep time (in milliseconds)
+  // const randomSleepTime = await getRandomInt(min, max);
+  const question = new Question({
+    question: req.body.question,
+    options: req.body.options,
+    answer: req.body.answer,
+  });
+  // await sleep(randomSleepTime)
+
+  const endTime = new Date().getSeconds();
+  console.log(endTime-start)
+
+  try {
+    const newQuestion = await question.save();
+    res.status(201).json(newQuestion);
+    histo.labels({histogaram_for_post_questions: res.statusCode}).observe(endTime-start)
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
@@ -87,25 +139,6 @@ app.get('/metrics', (req, res) => {
   res.setHeader('Content-Type', register.contentType)
   register.metrics().then(data => res.status(200).send(data))
 })
-
-// POST a new question
-// // Modified route to include csrfProtection as middleware
-// app.post("/api/questions", csrfProtection, async (req, res) => { // Protect this route with CSRF - Line modified
-
-app.post("/api/questions", async (req, res) => {
-  const question = new Question({
-    question: req.body.question,
-    options: req.body.options,
-    answer: req.body.answer,
-  });
-
-  try {
-    const newQuestion = await question.save();
-    res.status(201).json(newQuestion);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
 
 // Additional routes for updating and deleting questions can be added here
 // Start the server
