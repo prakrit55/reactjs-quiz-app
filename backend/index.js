@@ -135,9 +135,10 @@ app.post("/api/questions", async (req, res) => {
 });
 
 
-app.get('/metrics', (req, res) => {
+app.get('/metrics', async(req, res) => {
   res.setHeader('Content-Type', register.contentType)
-  register.metrics().then(data => res.status(200).send(data))
+  res.end(await register.getSingleMetricAsString("requests_per_second"))
+  // register.metrics().then(data => res.status(200).send(data))
 })
 
 // Additional routes for updating and deleting questions can be added here
