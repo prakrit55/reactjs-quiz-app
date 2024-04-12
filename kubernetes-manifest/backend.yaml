@@ -22,9 +22,17 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ogochukwuozotta/backend-api:latest
+        image: prakrit55/backend-v8:latest
         ports:
-        - containerPort: 3000
+        - name: http
+          containerPort: 3000
+        resources:
+          limits:
+            cpu: 50m
+            memory: 256Mi
+          requests:
+            cpu: 20m
+            memory: 128Mi
         env:
         - name: MONGO_URI
           valueFrom:
@@ -37,11 +45,15 @@ kind: Service
 metadata:
   name: backend-service
   namespace: quiz
+  labels:
+    app: backend
 spec:
   selector:
     app: backend
   ports:
-  - port: 3000
+  - name: http
+    port: 3000
     protocol: TCP
+    targetPort: http
   type: ClusterIP
   
