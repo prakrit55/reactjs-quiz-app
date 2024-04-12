@@ -2,7 +2,7 @@ kind: HorizontalPodAutoscaler
 apiVersion: autoscaling/v2beta2
 metadata:
   name: http
-  namespace: demo
+  namespace: quiz
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
