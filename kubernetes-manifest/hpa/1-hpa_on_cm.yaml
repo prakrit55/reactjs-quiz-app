@@ -23,4 +23,4 @@ spec:
         # which is 1 request every two seconds
         type: AverageValue
         averageValue: 200m
-      cooldownSeconds: 300
+  cooldownSeconds: 300
