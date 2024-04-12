@@ -27,7 +27,7 @@ spec:
         - --secure-port=6443
         - --cert-dir=/tmp/cert
         - --logtostderr=true
-        - --prometheus-url=http://18.215.166.154:9090
+        - --prometheus-url=http://52.201.239.106:9090
         - --metrics-relist-interval=1m
         - --v=4
         - --config=/etc/adapter/config.yaml
